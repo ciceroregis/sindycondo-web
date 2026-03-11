@@ -93,7 +93,7 @@ jobs:
             docker compose -f docker-compose.frontend.yml pull frontend
 
             echo "==> Subindo container atualizado..."
-            docker compose -f docker-compose.frontend.yml up -d --no-deps --remove-orphans frontend
+            docker compose -f docker-compose.frontend.yml up -d --no-deps frontend
 
             echo "==> Aguardando frontend iniciar..."
             sleep 5
