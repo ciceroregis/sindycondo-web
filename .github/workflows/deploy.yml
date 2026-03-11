@@ -67,16 +67,24 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
-          GITHUB_IMAGE: ${{ github.repository }}
+          GITHUB_FRONTEND_IMAGE: ${{ github.repository }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          envs: GHCR_TOKEN,GHCR_USER,GITHUB_IMAGE
+          envs: GHCR_TOKEN,GHCR_USER,GITHUB_FRONTEND_IMAGE,REPO,SHA
           script: |
             set -e
-            cd /opt/sindycondo
+
+            mkdir -p /opt/sindycondo-frontend
+            cd /opt/sindycondo-frontend
+
+            echo "==> Baixando docker-compose.yml..."
+            RAW="https://raw.githubusercontent.com/${REPO}/${SHA}"
+            curl -fsSL "${RAW}/docker-compose.yml" -o docker-compose.yml
 
             echo "==> Autenticando no GHCR..."
             echo "$GHCR_TOKEN" | docker login ghcr.io \
