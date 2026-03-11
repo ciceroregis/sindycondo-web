@@ -1,0 +1,141 @@
+<div class="p-6 max-w-2xl mx-auto space-y-6">
+
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">Meu Perfil</h1>
+    <p class="text-slate-500 text-sm mt-0.5">Gerencie seus dados cadastrais</p>
+  </div>
+
+  @if (user) {
+    <!-- Card de identidade -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div class="h-24 bg-gradient-to-r from-indigo-500 to-violet-600"></div>
+      <div class="px-6 pb-6">
+        <!-- Avatar sobreposto ao banner -->
+        <div class="-mt-10 mb-4">
+          <div [class]="'w-20 h-20 rounded-2xl border-4 border-white flex items-center justify-center text-white text-2xl font-bold shadow-lg ' + avatarBg(user.nome)">
+            {{ iniciais(user.nome) }}
+          </div>
+        </div>
+        <!-- Nome e tipo abaixo do avatar, dentro do card -->
+        <div class="mb-5">
+          <h2 class="text-xl font-bold text-slate-900 leading-tight">{{ user.nome }}</h2>
+          <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+            <span class="px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-indigo-100 text-indigo-700">
+              {{ tipoLabels[user.tipo] ?? user.tipo }}
+            </span>
+            @if (user.condominio_nome) {
+              <span class="text-xs text-slate-400">{{ user.condominio_nome }}</span>
+            }
+          </div>
+        </div>
+
+        <!-- Dados somente leitura -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">CPF</p>
+            <p class="text-sm text-slate-700 font-mono">{{ user.cpf }}</p>
+          </div>
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Usuário</p>
+            <p class="text-sm text-slate-700">{{ user.username }}</p>
+          </div>
+          @if (user.tipo === 'morador') {
+            <div>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Apartamento / Bloco</p>
+              <p class="text-sm text-slate-700">Apt {{ user.apartamento }} — Bloco {{ user.bloco }}</p>
+            </div>
+            @if (user.garagem_numero) {
+              <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-0.5">Garagem</p>
+                <p class="text-sm text-slate-700">Vaga {{ user.garagem_numero }}</p>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulário de edição -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+      <h3 class="text-base font-semibold text-slate-900 mb-4">Editar dados</h3>
+
+      <form (ngSubmit)="salvar()" class="space-y-4">
+
+        @if (sucesso()) {
+          <div class="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <p class="text-xs text-emerald-700 font-medium">Dados atualizados com sucesso!</p>
+          </div>
+        }
+
+        @if (erro()) {
+          <div class="flex items-start gap-3 p-3 rounded-xl bg-red-50 border border-red-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-red-500 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <p class="text-xs text-red-600 leading-relaxed">{{ erro() }}</p>
+          </div>
+        }
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nome completo</label>
+            <input type="text" [(ngModel)]="form.nome" name="nome"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800
+                     focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">E-mail</label>
+            <input type="email" [(ngModel)]="form.email" name="email"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800
+                     focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Telefone</label>
+            <input type="text" [(ngModel)]="form.telefone" name="telefone"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800
+                     focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all"
+              placeholder="(00) 00000-0000" />
+          </div>
+        </div>
+
+        <!-- Alterar senha -->
+        <div class="border-t border-slate-100 pt-4">
+          <p class="text-xs font-semibold text-slate-500 mb-3">Alterar senha <span class="font-normal text-slate-400">(opcional)</span></p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Senha atual</label>
+              <input type="password" [(ngModel)]="form.senha_atual" name="senha_atual"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Nova senha</label>
+              <input type="password" [(ngModel)]="form.nova_senha" name="nova_senha"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-800
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all" />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button type="submit" [disabled]="salvando()"
+            class="px-6 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors
+                   disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
+            @if (salvando()) {
+              <svg class="w-4 h-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            }
+            {{ salvando() ? 'Salvando...' : 'Salvar alterações' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+</div>
