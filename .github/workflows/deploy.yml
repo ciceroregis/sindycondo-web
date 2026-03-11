@@ -79,9 +79,8 @@ jobs:
           script: |
             set -e
 
-            sudo mkdir -p /opt/sindycondo-frontend
-            sudo chown $USER:$USER /opt/sindycondo-frontend
-            cd /opt/sindycondo-frontend
+            mkdir -p ~/sindycondo-frontend
+            cd ~/sindycondo-frontend
 
             echo "==> Baixando docker-compose.yml..."
             RAW="https://raw.githubusercontent.com/${REPO}/${SHA}"
