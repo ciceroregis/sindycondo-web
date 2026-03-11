@@ -79,26 +79,25 @@ jobs:
           script: |
             set -e
 
-            mkdir -p ~/sindycondo-frontend
-            cd ~/sindycondo-frontend
+            cd /opt/sindycondo
 
-            echo "==> Baixando docker-compose.yml..."
+            echo "==> Baixando docker-compose.frontend.yml..."
             RAW="https://raw.githubusercontent.com/${REPO}/${SHA}"
-            curl -fsSL "${RAW}/docker-compose.yml" -o docker-compose.yml
+            curl -fsSL "${RAW}/docker-compose.yml" -o docker-compose.frontend.yml
 
             echo "==> Autenticando no GHCR..."
             echo "$GHCR_TOKEN" | docker login ghcr.io \
               -u "$GHCR_USER" --password-stdin
 
             echo "==> Baixando nova imagem do frontend..."
-            docker compose pull frontend
+            docker compose -f docker-compose.frontend.yml pull frontend
 
             echo "==> Subindo container atualizado..."
-            docker compose up -d --no-deps --remove-orphans frontend
+            docker compose -f docker-compose.frontend.yml up -d --no-deps --remove-orphans frontend
 
             echo "==> Aguardando frontend iniciar..."
             sleep 5
-            docker compose ps frontend
+            docker compose -f docker-compose.frontend.yml ps frontend
 
             echo "==> Limpando imagens antigas..."
             docker image prune -f
