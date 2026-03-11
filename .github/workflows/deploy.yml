@@ -79,7 +79,8 @@ jobs:
           script: |
             set -e
 
-            mkdir -p /opt/sindycondo-frontend
+            sudo mkdir -p /opt/sindycondo-frontend
+            sudo chown $USER:$USER /opt/sindycondo-frontend
             cd /opt/sindycondo-frontend
 
             echo "==> Baixando docker-compose.yml..."
