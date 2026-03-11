@@ -1,0 +1,106 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ─────────────────────────────────────────
+  # JOB 1: Build e push da imagem Docker
+  # ─────────────────────────────────────────
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extrair metadata da imagem
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build e push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────
+  # JOB 2: Deploy no VPS via SSH
+  # ─────────────────────────────────────────
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+          GITHUB_FRONTEND_IMAGE: ${{ github.repository }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          envs: GHCR_TOKEN,GHCR_USER,GITHUB_FRONTEND_IMAGE,REPO,SHA
+          script: |
+            set -e
+
+            mkdir -p /opt/sindycondo-frontend
+            cd /opt/sindycondo-frontend
+
+            echo "==> Baixando docker-compose.yml..."
+            RAW="https://raw.githubusercontent.com/${REPO}/${SHA}"
+            curl -fsSL "${RAW}/docker-compose.yml" -o docker-compose.yml
+
+            echo "==> Autenticando no GHCR..."
+            echo "$GHCR_TOKEN" | docker login ghcr.io \
+              -u "$GHCR_USER" --password-stdin
+
+            echo "==> Baixando nova imagem do frontend..."
+            docker compose pull frontend
+
+            echo "==> Subindo container atualizado..."
+            docker compose up -d --no-deps --remove-orphans frontend
+
+            echo "==> Aguardando frontend iniciar..."
+            sleep 5
+            docker compose ps frontend
+
+            echo "==> Limpando imagens antigas..."
+            docker image prune -f
+
+            echo "==> Deploy do frontend concluído com sucesso!"
