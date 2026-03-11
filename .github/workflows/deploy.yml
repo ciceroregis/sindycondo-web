@@ -83,7 +83,7 @@ jobs:
 
             echo "==> Baixando docker-compose.frontend.yml..."
             RAW="https://raw.githubusercontent.com/${REPO}/${SHA}"
-            curl -fsSL "${RAW}/docker-compose.yml" -o docker-compose.frontend.yml
+            curl -fsSL "${RAW}/frontend/sindycondo/docker-compose.yml" -o docker-compose.frontend.yml
 
             echo "==> Autenticando no GHCR..."
             echo "$GHCR_TOKEN" | docker login ghcr.io \
