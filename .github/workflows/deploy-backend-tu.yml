@@ -1,19 +1,21 @@
-name: Build & Deploy TU
+name: Build & Deploy Backend TU
 
 on:
   push:
     branches: [develop]
+    paths:
+      - "backend/**"
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository_owner }}/sindycondo-backend
 
 jobs:
   # ─────────────────────────────────────────
   # JOB 1: Build e push da imagem Docker (tag: develop)
   # ─────────────────────────────────────────
   build:
-    name: Build Docker Image (TU)
+    name: Build Backend Image (TU)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -36,7 +38,7 @@ jobs:
       - name: Build e push (tag develop)
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: backend
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:develop
           cache-from: type=gha
@@ -46,15 +48,12 @@ jobs:
   # JOB 2: Deploy no VPS via SSH
   # ─────────────────────────────────────────
   deploy:
-    name: Deploy TU
+    name: Deploy Backend TU
     runs-on: ubuntu-latest
     needs: build
     environment: tu
 
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         env:
@@ -62,7 +61,7 @@ jobs:
           GHCR_USER: ${{ github.actor }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
-          GITHUB_IMAGE: ${{ github.repository }}
+          GITHUB_IMAGE: ${{ env.IMAGE_NAME }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
@@ -77,7 +76,7 @@ jobs:
 
             echo "==> Baixando arquivos de configuração..."
             RAW="https://raw.githubusercontent.com/${REPO}/${SHA}"
-            curl -fsSL "${RAW}/docker-compose.tu.yml" -o docker-compose.tu.yml
+            curl -fsSL "${RAW}/backend/docker-compose.tu.yml" -o docker-compose.tu.yml
 
             echo "==> Autenticando no GHCR..."
             echo "$GHCR_TOKEN" | docker login ghcr.io \
