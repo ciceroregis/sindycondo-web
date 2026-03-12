@@ -51,7 +51,6 @@ jobs:
     name: Deploy Backend TU
     runs-on: ubuntu-latest
     needs: build
-    environment: tu
 
     steps:
       - name: Deploy via SSH
@@ -85,12 +84,12 @@ jobs:
             echo "==> Baixando nova imagem (develop)..."
             GITHUB_IMAGE=$GITHUB_IMAGE docker compose -f docker-compose.tu.yml pull api celery
 
-            echo "==> Subindo containers TU..."
-            GITHUB_IMAGE=$GITHUB_IMAGE docker compose -f docker-compose.tu.yml up -d --no-deps --remove-orphans api celery
+            echo "==> Subindo todos os serviços TU..."
+            GITHUB_IMAGE=$GITHUB_IMAGE docker compose -f docker-compose.tu.yml up -d --remove-orphans
 
             echo "==> Aguardando API iniciar..."
-            sleep 10
-            docker compose -f docker-compose.tu.yml ps api
+            sleep 15
+            docker compose -f docker-compose.tu.yml ps
 
             echo "==> Limpando imagens antigas..."
             docker image prune -f
