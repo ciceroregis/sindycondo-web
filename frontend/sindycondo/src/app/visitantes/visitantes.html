@@ -175,7 +175,7 @@
         <div class="p-4 border-t border-slate-100">
           <app-pagination
             [currentPage]="paginaAtual()"
-            [totalItems]="totalCount()"
+            [count]="totalCount()"
             [pageSize]="20"
             (pageChange)="onPagina($event)"/>
         </div>
