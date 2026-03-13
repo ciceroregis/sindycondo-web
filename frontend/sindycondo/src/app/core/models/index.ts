@@ -60,16 +60,22 @@ export interface Visitante {
   cpf: string;
   telefone: string;
   foto: string | null;
-  morador: number;
+  morador: number | null;
+  morador_nome?: string;
   condominio: number;
   data_inicio: string;
   data_fim: string;
   max_pessoas: number;
   status: VisitanteStatus;
+  status_display?: string;
   qr_code_id: string;
   qr_code_imagem: string | null;
   observacoes: string;
   usos_count: number;
+  liberado_por?: number | null;
+  liberado_por_nome?: string;
+  liberado_em?: string | null;
+  created_at?: string;
 }
 
 export interface RegistroAcesso {

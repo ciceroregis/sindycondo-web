@@ -1,0 +1,322 @@
+<div class="p-6">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Visitantes</h1>
+      <p class="text-slate-500 text-sm mt-1">Controle de visitantes e autorizações</p>
+    </div>
+    @if (podeNovoVisitante()) {
+      <button (click)="abrirNovoModal()"
+        class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+        Novo visitante
+      </button>
+    }
+  </div>
+
+  <!-- Tabs + Busca -->
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b border-slate-100">
+      <!-- Tabs -->
+      <div class="flex gap-1 overflow-x-auto">
+        @for (tab of tabs; track tab.value) {
+          <button (click)="onTab(tab.value)"
+            [class]="tabAtiva() === tab.value
+              ? 'px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700'
+              : 'px-3 py-1.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50'">
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+      <!-- Busca -->
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+        </svg>
+        <input type="text" placeholder="Buscar por nome..."
+          [value]="busca()"
+          (input)="onBusca($any($event.target).value)"
+          class="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="p-8 flex justify-center">
+        <div class="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+      </div>
+    }
+
+    <!-- Lista -->
+    @if (!loading()) {
+      @if (visitantes().length === 0) {
+        <div class="p-12 flex flex-col items-center text-center">
+          <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3">
+            <svg class="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <p class="text-slate-500 text-sm">Nenhum visitante encontrado.</p>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs text-slate-400 uppercase tracking-wide">
+                <th class="px-4 py-3 font-medium">Visitante</th>
+                <th class="px-4 py-3 font-medium hidden sm:table-cell">Período</th>
+                @if (!isMorador()) {
+                  <th class="px-4 py-3 font-medium hidden md:table-cell">Morador</th>
+                }
+                <th class="px-4 py-3 font-medium hidden lg:table-cell">Usos</th>
+                <th class="px-4 py-3 font-medium">Status</th>
+                <th class="px-4 py-3 font-medium text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+              @for (v of visitantes(); track v.id) {
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <!-- Nome + contato -->
+                  <td class="px-4 py-3">
+                    <div class="font-medium text-slate-800">{{ v.nome }}</div>
+                    @if (v.cpf) {
+                      <div class="text-xs text-slate-400 font-mono">{{ v.cpf }}</div>
+                    }
+                    @if (v.telefone) {
+                      <div class="text-xs text-slate-400">{{ v.telefone }}</div>
+                    }
+                  </td>
+                  <!-- Período -->
+                  <td class="px-4 py-3 hidden sm:table-cell">
+                    <div class="text-slate-700">{{ formatarData(v.data_inicio) }}</div>
+                    <div class="text-xs text-slate-400">até {{ formatarData(v.data_fim) }}</div>
+                  </td>
+                  <!-- Morador (apenas não-morador) -->
+                  @if (!isMorador()) {
+                    <td class="px-4 py-3 hidden md:table-cell text-slate-600">
+                      {{ v.morador_nome || '—' }}
+                    </td>
+                  }
+                  <!-- Usos -->
+                  <td class="px-4 py-3 hidden lg:table-cell">
+                    <span class="text-slate-600">{{ v.usos_count }}/{{ v.max_pessoas }}</span>
+                  </td>
+                  <!-- Status -->
+                  <td class="px-4 py-3">
+                    <span [class]="'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + statusBadge(v.status)">
+                      {{ statusLabel(v.status) }}
+                    </span>
+                  </td>
+                  <!-- Ações -->
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-1">
+                      <!-- QR Code -->
+                      @if (v.status === 'approved' && v.qr_code_imagem) {
+                        <button (click)="abrirQr(v)" title="Ver QR Code"
+                          class="p-1.5 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                          </svg>
+                        </button>
+                      }
+                      <!-- Aprovar -->
+                      @if (isSindico() && v.status === 'pending') {
+                        <button (click)="aprovar(v)" title="Aprovar"
+                          class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        </button>
+                      }
+                      <!-- Bloquear -->
+                      @if (podeBloquear(v)) {
+                        <button (click)="bloquear(v)" title="Bloquear"
+                          class="p-1.5 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                          </svg>
+                        </button>
+                      }
+                      <!-- Editar -->
+                      @if (podeEditar(v) && v.status !== 'expired') {
+                        <button (click)="abrirEditarModal(v)" title="Editar"
+                          class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                          </svg>
+                        </button>
+                      }
+                      <!-- Excluir -->
+                      @if (isSindico()) {
+                        <button (click)="deletar(v)" title="Excluir"
+                          class="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors">
+                          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                          </svg>
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginação -->
+        <div class="p-4 border-t border-slate-100">
+          <app-pagination
+            [currentPage]="paginaAtual()"
+            [totalItems]="totalCount()"
+            [pageSize]="20"
+            (pageChange)="onPagina($event)"/>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- Modal: Criar / Editar Visitante -->
+@if (showModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="fecharModal()"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-6 border-b border-slate-100">
+        <h2 class="text-lg font-semibold text-slate-800">
+          {{ editingId() ? 'Editar visitante' : 'Novo visitante' }}
+        </h2>
+        <button (click)="fecharModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <form class="p-6 space-y-4" (ngSubmit)="salvar()">
+        @if (erroModal()) {
+          <div class="bg-red-50 border border-red-100 rounded-xl p-3 text-sm text-red-600">
+            {{ erroModal() }}
+          </div>
+        }
+
+        <!-- Nome -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Nome <span class="text-red-500">*</span></label>
+          <input type="text" [ngModel]="form().nome" (ngModelChange)="form.update(f => ({...f, nome: $event}))"
+            name="nome" placeholder="Nome completo do visitante"
+            class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+        </div>
+
+        <!-- CPF + Telefone -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">CPF</label>
+            <input type="text" [ngModel]="form().cpf" (ngModelChange)="form.update(f => ({...f, cpf: $event}))"
+              name="cpf" placeholder="000.000.000-00"
+              class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Telefone</label>
+            <input type="text" [ngModel]="form().telefone" (ngModelChange)="form.update(f => ({...f, telefone: $event}))"
+              name="telefone" placeholder="(00) 00000-0000"
+              class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+          </div>
+        </div>
+
+        <!-- Data início + fim -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Data início <span class="text-red-500">*</span></label>
+            <input type="datetime-local" [ngModel]="form().data_inicio" (ngModelChange)="form.update(f => ({...f, data_inicio: $event}))"
+              name="data_inicio"
+              class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Data fim <span class="text-red-500">*</span></label>
+            <input type="datetime-local" [ngModel]="form().data_fim" (ngModelChange)="form.update(f => ({...f, data_fim: $event}))"
+              name="data_fim"
+              class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+          </div>
+        </div>
+
+        <!-- Max pessoas -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Máximo de pessoas</label>
+          <input type="number" min="1" max="20"
+            [ngModel]="form().max_pessoas" (ngModelChange)="form.update(f => ({...f, max_pessoas: +$event}))"
+            name="max_pessoas"
+            class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+        </div>
+
+        <!-- Observações -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Observações</label>
+          <textarea rows="3" [ngModel]="form().observacoes" (ngModelChange)="form.update(f => ({...f, observacoes: $event}))"
+            name="observacoes" placeholder="Informações adicionais..."
+            class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"></textarea>
+        </div>
+
+        <!-- Foto -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Foto do visitante</label>
+          <input type="file" accept="image/jpeg,image/png,image/webp"
+            (change)="onFotoChange($event)"
+            class="w-full text-sm text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"/>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" (click)="fecharModal()"
+            class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" [disabled]="salvando()"
+            class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors disabled:opacity-50">
+            @if (salvando()) { Salvando... } @else { Salvar }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Modal: QR Code -->
+@if (showQrModal() && visitanteQr()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="fecharQrModal()"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm">
+      <div class="flex items-center justify-between p-6 border-b border-slate-100">
+        <h2 class="text-lg font-semibold text-slate-800">QR Code de acesso</h2>
+        <button (click)="fecharQrModal()" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 flex flex-col items-center gap-4">
+        <img [src]="visitanteQr()!.qr_code_imagem!" [alt]="visitanteQr()!.nome"
+          class="w-56 h-56 object-contain rounded-xl border border-slate-100"/>
+        <div class="text-center">
+          <p class="font-semibold text-slate-800">{{ visitanteQr()!.nome }}</p>
+          <p class="text-sm text-slate-500 mt-1">
+            {{ formatarData(visitanteQr()!.data_inicio) }} até {{ formatarData(visitanteQr()!.data_fim) }}
+          </p>
+          <p class="text-sm text-slate-500">
+            Usos: {{ visitanteQr()!.usos_count }} / {{ visitanteQr()!.max_pessoas }}
+          </p>
+          @if (visitanteQr()!.liberado_por_nome) {
+            <p class="text-xs text-slate-400 mt-1">Aprovado por {{ visitanteQr()!.liberado_por_nome }}</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
