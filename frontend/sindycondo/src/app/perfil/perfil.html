@@ -21,7 +21,7 @@
           <h2 class="text-xl font-bold text-slate-900 leading-tight">{{ user.nome }}</h2>
           <div class="flex items-center gap-2 mt-1.5 flex-wrap">
             <span class="px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-indigo-100 text-indigo-700">
-              {{ tipoLabels[user.tipo] ?? user.tipo }}
+              {{ tipoLabels[user.tipo] }}
             </span>
             @if (user.condominio_nome) {
               <span class="text-xs text-slate-400">{{ user.condominio_nome }}</span>

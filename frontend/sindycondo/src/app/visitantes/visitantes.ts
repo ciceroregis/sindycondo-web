@@ -51,6 +51,7 @@ export class VisitantesComponent implements OnInit {
   });
 
   readonly isSindico = computed(() => this.auth.isSindico());
+  readonly isPorteiro = computed(() => this.auth.isPorteiro());
   readonly isMorador = computed(() => this.auth.user()?.tipo === 'morador');
   readonly podeNovoVisitante = computed(() => {
     const tipo = this.auth.user()?.tipo;

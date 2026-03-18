@@ -19,9 +19,9 @@ export interface Condominio {
   estado: string;
   cep: string;
   telefone: string;
-  blocos: number;
-  total_apartamentos: number;
-  total_vagas: number;
+  blocos: number | null;
+  total_apartamentos: number | null;
+  total_vagas: number | null;
   ativo: boolean;
 }
 
@@ -40,6 +40,8 @@ export interface Usuario {
   condominio: number;
   condominio_nome?: string;
   garagem_numero?: string | null;
+  notificacoes_push: boolean;
+  notificacoes_whatsapp: boolean;
   ativo: boolean;
   created_at: string;
   updated_at?: string;
@@ -78,15 +80,23 @@ export interface Visitante {
   created_at?: string;
 }
 
+export type TipoRegistro = 'entrada' | 'saida';
+
 export interface RegistroAcesso {
   id: number;
   condominio: number;
   visitante: number | null;
-  morador: number;
-  porteiro: number;
+  visitante_nome?: string;
+  morador: number | null;
+  porteiro: number | null;
+  porteiro_nome?: string;
   tipo_acesso: TipoAcesso;
+  tipo_registro: TipoRegistro;
   autorizado: boolean;
   motivo_negado: string;
+  face_confidence: number | null;
+  placa_detectada: string | null;
+  imagem_snapshot: string | null;
   timestamp: string;
 }
 
