@@ -1,7 +1,8 @@
-import { Component, signal, inject, computed } from '@angular/core';
+import { Component, signal, inject, computed, effect } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
+import { PushNotificationService } from '../../core/services/push-notification.service';
 
 interface NavItem {
   label: string;
@@ -20,6 +21,7 @@ interface NavItem {
 export class ShellComponent {
   auth = inject(AuthService);
   router = inject(Router);
+  private push = inject(PushNotificationService);
 
   sidebarOpen = signal(true);
   mobileOpen = signal(false);
@@ -42,6 +44,16 @@ export class ShellComponent {
     );
   });
 
+  constructor() {
+    // Solicita permissão e subscreve push para porteiros/síndicos/admins logo após login
+    effect(() => {
+      const user = this.auth.user();
+      if (user && ['admin', 'sindico', 'porteiro'].includes(user.tipo) && user.notificacoes_push) {
+        this.push.init();
+      }
+    });
+  }
+
   toggleSidebar() {
     this.sidebarOpen.update(v => !v);
   }
@@ -51,6 +63,7 @@ export class ShellComponent {
   }
 
   logout() {
+    this.push.unsubscribe();
     this.auth.logout();
   }
 

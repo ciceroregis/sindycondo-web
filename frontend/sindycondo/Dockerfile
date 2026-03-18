@@ -9,7 +9,8 @@ COPY package*.json ./
 RUN npm ci --omit=dev=false
 
 COPY . .
-RUN npm run build
+ARG BUILD_CONFIG=production
+RUN npm run build -- --configuration=${BUILD_CONFIG}
 
 # ─────────────────────────────────────────
 # Stage 2: Servir com Nginx

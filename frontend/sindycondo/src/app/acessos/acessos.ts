@@ -1,26 +1,117 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AcessosService } from '../core/services/acessos.service';
+import { AuthService } from '../core/services/auth.service';
+import { PaginationComponent } from '../core/components/pagination';
+import { RegistroAcesso, TipoAcesso, TipoRegistro } from '../core/models';
 
 @Component({
   selector: 'app-acessos',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="p-6">
-      <div class="mb-6">
-        <h1 class="text-2xl font-bold text-slate-900">Controle de Acesso</h1>
-        <p class="text-slate-500 text-sm mt-1">Histórico e gestão de acessos ao condomínio</p>
-      </div>
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 flex flex-col items-center justify-center text-center">
-        <div class="w-16 h-16 bg-sky-100 rounded-2xl flex items-center justify-center mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-sky-500" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-        </div>
-        <h2 class="text-lg font-semibold text-slate-700">Módulo em desenvolvimento</h2>
-        <p class="text-slate-400 text-sm mt-1 max-w-xs">O controle de acesso com registro em tempo real será implementado em breve.</p>
-      </div>
-    </div>
-  `
+  imports: [CommonModule, FormsModule, PaginationComponent],
+  templateUrl: './acessos.html',
 })
-export class AcessosComponent {}
+export class AcessosComponent implements OnInit {
+  private svc = inject(AcessosService);
+  readonly auth = inject(AuthService);
+
+  loading = signal(false);
+  acessos = signal<RegistroAcesso[]>([]);
+  totalCount = signal(0);
+  paginaAtual = signal(1);
+
+  filtroData = signal('');
+  filtroAutorizado = signal<'' | 'true' | 'false'>('');
+
+  // QR Validation
+  showQrForm = signal(false);
+  qrCode = signal('');
+  tipoRegistro = signal<'entrada' | 'saida'>('entrada');
+  validando = signal(false);
+  resultadoQr = signal<{ autorizado: boolean; mensagem: string } | null>(null);
+
+  readonly isPorteiro = computed(() => this.auth.isPorteiro());
+
+  ngOnInit() {
+    this.carregar();
+  }
+
+  carregar() {
+    this.loading.set(true);
+    const filters: { data?: string; autorizado?: boolean } = {};
+    if (this.filtroData()) filters.data = this.filtroData();
+    if (this.filtroAutorizado() !== '') filters.autorizado = this.filtroAutorizado() === 'true';
+
+    this.svc.listar(this.paginaAtual(), filters).subscribe({
+      next: res => {
+        this.acessos.set(res.results);
+        this.totalCount.set(res.count);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  onFiltroData(valor: string) {
+    this.filtroData.set(valor);
+    this.paginaAtual.set(1);
+    this.carregar();
+  }
+
+  onFiltroAutorizado(valor: '' | 'true' | 'false') {
+    this.filtroAutorizado.set(valor);
+    this.paginaAtual.set(1);
+    this.carregar();
+  }
+
+  onPagina(p: number) {
+    this.paginaAtual.set(p);
+    this.carregar();
+  }
+
+  validarQr() {
+    if (!this.qrCode().trim()) return;
+    this.validando.set(true);
+    this.resultadoQr.set(null);
+
+    this.svc.validarQr({ qr_code_id: this.qrCode().trim(), tipo_registro: this.tipoRegistro() }).subscribe({
+      next: res => {
+        this.resultadoQr.set({
+          autorizado: res.autorizado,
+          mensagem: res.autorizado
+            ? `Acesso autorizado${res.visitante ? ' — ' + res.visitante : ''}`
+            : (res.motivo ?? 'Acesso negado')
+        });
+        this.validando.set(false);
+        if (res.autorizado) {
+          this.qrCode.set('');
+          this.carregar();
+        }
+      },
+      error: err => {
+        const msg = err.error?.detail ?? err.error?.motivo ?? 'Erro ao validar QR Code.';
+        this.resultadoQr.set({ autorizado: false, mensagem: msg });
+        this.validando.set(false);
+      }
+    });
+  }
+
+  tipoAcessoLabel(tipo: TipoAcesso): string {
+    const map: Record<TipoAcesso, string> = {
+      qr: 'QR Code', facial: 'Facial', placa: 'Placa', manual: 'Manual', chave: 'Chave'
+    };
+    return map[tipo] ?? tipo;
+  }
+
+  tipoRegistroLabel(tipo: TipoRegistro): string {
+    return tipo === 'entrada' ? 'Entrada' : 'Saída';
+  }
+
+  formatarData(iso: string): string {
+    return new Date(iso).toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+}

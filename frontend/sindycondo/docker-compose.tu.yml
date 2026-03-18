@@ -1,0 +1,24 @@
+name: sindycondo-tu-frontend
+
+services:
+
+  frontend:
+    image: ghcr.io/${GITHUB_IMAGE}:develop
+    restart: unless-stopped
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=sindycondo_web"
+      - "traefik.http.routers.tu-frontend.rule=Host(`tu.sindycondo.com.br`)"
+      - "traefik.http.routers.tu-frontend.entrypoints=websecure"
+      - "traefik.http.routers.tu-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.tu-frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.tu-frontend-http.rule=Host(`tu.sindycondo.com.br`)"
+      - "traefik.http.routers.tu-frontend-http.entrypoints=web"
+      - "traefik.http.routers.tu-frontend-http.middlewares=https-redirect@docker"
+
+networks:
+  web:
+    external: true
+    name: sindycondo_web
