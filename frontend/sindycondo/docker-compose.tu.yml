@@ -10,18 +10,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
-      # Middleware definido localmente — sem dependência de outros containers
-      - "traefik.http.middlewares.https-redirect-tu.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.https-redirect-tu.redirectscheme.permanent=true"
-      # HTTPS
       - "traefik.http.routers.tu-frontend.rule=Host(`tu.sindycondo.com.br`) || Host(`www.tu.sindycondo.com.br`)"
       - "traefik.http.routers.tu-frontend.entrypoints=websecure"
       - "traefik.http.routers.tu-frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.tu-frontend.loadbalancer.server.port=80"
-      # Redirect HTTP → HTTPS
       - "traefik.http.routers.tu-frontend-http.rule=Host(`tu.sindycondo.com.br`) || Host(`www.tu.sindycondo.com.br`)"
       - "traefik.http.routers.tu-frontend-http.entrypoints=web"
-      - "traefik.http.routers.tu-frontend-http.middlewares=https-redirect-tu"
+      - "traefik.http.routers.tu-frontend-http.middlewares=https-redirect@docker"
 
 networks:
   web:
