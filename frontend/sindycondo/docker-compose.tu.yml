@@ -16,7 +16,7 @@ services:
       - "traefik.http.services.tu-frontend.loadbalancer.server.port=80"
       - "traefik.http.routers.tu-frontend-http.rule=Host(`tu.sindycondo.com.br`) || Host(`www.tu.sindycondo.com.br`)"
       - "traefik.http.routers.tu-frontend-http.entrypoints=web"
-      - "traefik.http.routers.tu-frontend-http.middlewares=https-redirect@docker"
+      - "traefik.http.routers.tu-frontend-http.middlewares=https-redirect@file"
 
 networks:
   web:
